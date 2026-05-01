@@ -1,0 +1,17 @@
+version: "3"
+services:
+  api:
+    build: "."
+    restart: always
+    container_name: tecnoplast-tg-bot
+    environment:
+      - NODE_ENV=${NODE_ENV}
+    volumes:
+      - ./session_db.json:/app/session_db.json
+    command: supervisor node dist/main.js
+    networks:
+      - techno-plast
+
+networks:
+  techno-plast:
+    external: true
