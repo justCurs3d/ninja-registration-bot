@@ -5,6 +5,7 @@ import * as LocalSession from 'telegraf-session-local';
 import { ConfigModule } from './config/config.module';
 import { ConfigService } from './config/config.service';
 import { MongooseModule } from '@nestjs/mongoose';
+import { UsersModule } from './users/users.module';
 
 export const sessions = new LocalSession({ database: 'session_db.json' });
 
@@ -26,6 +27,7 @@ export const sessions = new LocalSession({ database: 'session_db.json' });
             }),
             inject: [ConfigService],
         }),
+        UsersModule,
     ],
     controllers: [],
     providers: [],
