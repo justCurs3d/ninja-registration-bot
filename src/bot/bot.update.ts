@@ -61,7 +61,6 @@ export class BotUpdate {
         const status = await ctx.reply('Собираю информацию об академии...');
         try {
             await ctx.sendChatAction('upload_video');
-            console.log(ctx);
             await ctx.replyWithVideo(Input.fromLocalFile(START_VIDEO_PATH), {
                 caption: aboutMessage,
                 ...aboutKeyboard,

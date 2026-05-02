@@ -28,7 +28,7 @@ export class UsersService {
             .findOneAndUpdate(
                 { _id: USER_ID_COUNTER_KEY },
                 { $inc: { seq: 1 } },
-                { new: true, upsert: true },
+                { returnDocument: 'after', upsert: true },
             )
             .exec();
         return counter!.seq;
