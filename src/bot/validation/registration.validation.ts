@@ -51,8 +51,8 @@ export function validateLoginInput(text: string): ValidationResult<string> {
     if (!/^[a-zA-Z0-9_-]+$/.test(login)) {
         return { ok: false, error: 'Логин может содержать только латинские буквы, цифры, знак _ или -' };
     }
-    if (/^\d+$/.test(login)) {
-        return { ok: false, error: 'Логин не может состоять только из цифр.' };
+    if (!/[a-zA-Z]/.test(login)) {
+        return { ok: false, error: 'Логин должен содержать хотя бы одну латинскую букву.' };
     }
     return { ok: true, value: login };
 }

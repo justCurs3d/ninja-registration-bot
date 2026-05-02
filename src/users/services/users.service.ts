@@ -38,4 +38,14 @@ export class UsersService {
         const updatedUser = await this.userModel.findOneAndUpdate({ id }, user, { returnDocument: 'after' });
         return updatedUser;
     }
+
+    async getUserById(id: number): Promise<UserDocument> {
+        const user = await this.userModel.findOne({ id });
+        return user;
+    }
+
+    async getUserByLogin(login: string): Promise<UserDocument> {
+        const user = await this.userModel.findOne({ login });
+        return user;
+    }
 }

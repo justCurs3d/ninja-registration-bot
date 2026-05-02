@@ -1,1 +1,3 @@
-export const ageMessage = `Сколько тебе лет?`;
+export const ageMessage = name =>`Приятно познакомиться, ${name}!
+
+Сколько тебе лет?`;

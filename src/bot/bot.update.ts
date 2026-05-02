@@ -24,8 +24,10 @@ import {
     validateNameInput,
     validatePasswordInput,
 } from './validation/registration.validation';
+import * as bcrypt from 'bcrypt';
 
 const START_VIDEO_PATH = path.join(__dirname, '..', '..', 'resources', 'about_video.mp4');
+const BCRYPT_ROUNDS = 12;
 
 @Update()
 export class BotUpdate {
@@ -56,7 +58,7 @@ export class BotUpdate {
     @Action('about')
     async onAbout(@Ctx() ctx: Context) {
         await ctx.answerCbQuery();
-        const status = await ctx.reply('Собираем информацию об академии...');
+        const status = await ctx.reply('Собираю информацию об академии...');
         try {
             await ctx.sendChatAction('upload_video');
             console.log(ctx);
@@ -94,7 +96,7 @@ export class BotUpdate {
                 name: value,
             });
             ctx.session.chatState = ChatState.AGE;
-            await ctx.reply(ageMessage);
+            await ctx.reply(ageMessage(value));
             return;
         }
 
@@ -123,6 +125,11 @@ export class BotUpdate {
                 await ctx.reply(error);
                 return;
             }
+            const existingUser = await this.usersService.getUserByLogin(value);
+            if (existingUser) {
+                await ctx.reply('Такой логин уже занят. Попробуй другой.');
+                return;
+            }
             await this.usersService.updateUser(ctx.session.registrationUserId, {
                 login: value,
             });
@@ -137,11 +144,15 @@ export class BotUpdate {
                 await ctx.reply(error);
                 return;
             }
+
+            const passwordHash = await bcrypt.hash(value, BCRYPT_ROUNDS);
             await this.usersService.updateUser(ctx.session.registrationUserId, {
-                passwordHash: value,
+                passwordHash,
             });
+
+            const {name} = await this.usersService.getUserById(ctx.session.registrationUserId);
             ctx.session.chatState = ChatState.DEFAULT;
-            await ctx.reply(finalMessage, finalKeyboard);
+            await ctx.reply(finalMessage(name), finalKeyboard);
             return;
         }
 
