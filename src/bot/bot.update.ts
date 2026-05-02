@@ -3,8 +3,27 @@ import { Action, Ctx, InjectBot, Message, On, Start, Update } from 'nestjs-teleg
 import { Input, Telegraf } from 'telegraf';
 import { ChatState, Context } from './interfaces/context.interface';
 import { ConfigService } from 'src/config/config.service';
-import { aboutKeyboard, aboutMessage, nameMessage, ageMessage, startKeyboard, startMessage } from './messages';
+import {
+    aboutKeyboard,
+    aboutMessage,
+    nameMessage,
+    ageMessage,
+    startKeyboard,
+    startMessage,
+    referalSourceMessage,
+    referalSourceKeyboard,
+    loginMessage,
+    passwordMessage,
+    finalMessage,
+    finalKeyboard,
+} from './messages';
 import { UsersService } from 'src/users/services/users.service';
+import {
+    validateAgeInput,
+    validateLoginInput,
+    validateNameInput,
+    validatePasswordInput,
+} from './validation/registration.validation';
 
 const START_VIDEO_PATH = path.join(__dirname, '..', '..', 'resources', 'about_video.mp4');
 
@@ -18,6 +37,7 @@ export class BotUpdate {
 
     @Start()
     async onStart(@Ctx() ctx: Context) {
+        ctx.session.chatState = ChatState.DEFAULT;
         await ctx.reply(startMessage, startKeyboard);
     }
 
@@ -51,14 +71,82 @@ export class BotUpdate {
         }
     }
 
+    @Action(/^referalSource_(.+)$/)
+    async onReferalSource(@Ctx() ctx: Context) {
+        await ctx.answerCbQuery();
+        const source = ctx.match[1];
+        await this.usersService.updateUser(ctx.session.registrationUserId, {
+            referralSource: source,
+        });
+        ctx.session.chatState = ChatState.LOGIN;
+        await ctx.reply(loginMessage);
+    }
+
     @On('text')
     async onMessage(@Ctx() ctx: Context, @Message('text') message: string) {
         if (ctx.session.chatState === ChatState.NAME) {
+            const {error, value} = validateNameInput(message);
+            if (error) {
+                await ctx.reply(error);
+                return;
+            }
             await this.usersService.updateUser(ctx.session.registrationUserId, {
-                name: message,
+                name: value,
             });
             ctx.session.chatState = ChatState.AGE;
             await ctx.reply(ageMessage);
+            return;
+        }
+
+        if (ctx.session.chatState === ChatState.AGE) {
+            const {error, value} = validateAgeInput(message);
+            if (error) {
+                await ctx.reply(error);
+                return;
+            }
+            await this.usersService.updateUser(ctx.session.registrationUserId, {  
+                age: value,
+            });
+            ctx.session.chatState = ChatState.REFERRAL_SOURCE;
+            await ctx.reply(referalSourceMessage, referalSourceKeyboard);
+            return;
+        }
+
+        if (ctx.session.chatState === ChatState.REFERRAL_SOURCE) {
+            await ctx.reply('Выбери один из вариантов.');
+            return;
+        }
+
+        if (ctx.session.chatState === ChatState.LOGIN) {
+            const {error, value} = validateLoginInput(message);
+            if (error) {
+                await ctx.reply(error);
+                return;
+            }
+            await this.usersService.updateUser(ctx.session.registrationUserId, {
+                login: value,
+            });
+            ctx.session.chatState = ChatState.PASSWORD;
+            await ctx.reply(passwordMessage);
+            return;
+        }
+
+        if (ctx.session.chatState === ChatState.PASSWORD) {
+            const {error, value} = validatePasswordInput(message);
+            if (error) {
+                await ctx.reply(error);
+                return;
+            }
+            await this.usersService.updateUser(ctx.session.registrationUserId, {
+                passwordHash: value,
+            });
+            ctx.session.chatState = ChatState.DEFAULT;
+            await ctx.reply(finalMessage, finalKeyboard);
+            return;
+        }
+
+        if (ctx.session.chatState === ChatState.DEFAULT) {
+            await ctx.reply(startMessage, startKeyboard);
             return;
         }
     }
